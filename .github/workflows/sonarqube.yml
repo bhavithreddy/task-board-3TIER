@@ -1,0 +1,49 @@
+name: SonarQube SAST Scan
+
+# Runs on every push and pull request to main
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  sonarqube:
+    name: SonarQube Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout full history (required for SonarQube blame info) ──
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── 2. Set up Node.js 18 ──
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      # ── 3. Install backend dependencies ──
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          npm ci
+
+      # ── 4. Install frontend dependencies ──
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      # ── 5. Run SonarQube scan (sends results to your local SonarQube via ngrok URL) ──
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v3
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
