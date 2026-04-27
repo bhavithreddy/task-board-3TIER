@@ -43,7 +43,7 @@ jobs:
 
       # ── 5. Run SonarQube scan (sends results to your local SonarQube via ngrok URL) ──
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v3
+        uses: SonarSource/sonarqube-scan-action@v2.3.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
