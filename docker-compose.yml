@@ -1,65 +1,51 @@
-# ================================================================
-# Docker Compose — Full 3-Tier Stack (Local Testing)
-#
-# Usage:
-#   docker compose up --build        # First time
-#   docker compose up                 # Subsequent runs
-#   docker compose down               # Stop everything
-#   docker compose down -v            # Stop + delete data
-#
-# Access:
-#   Frontend:  http://localhost:3000
-#   Backend:   http://localhost:5000
-#   API test:  curl http://localhost:5000/health
-#
-# No MongoDB installation required — it runs in Docker.
-# ================================================================
-
 version: "3.8"
 
 services:
-  # ── Backend (Node.js + Express) ──────────────────────────────
-  # Using existing MongoDB container: taskflow-mongodb
+  mongodb:
+    image: mongo:7.0
+    container_name: taskflow-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - taskflow-net
+
   backend:
-    image: ybhavithr/backend-taskflow:latest
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: taskflow-backend
     restart: unless-stopped
     ports:
-      - "5000:5000"             # Expose for direct API testing
+      - "5000:5000"
     environment:
-      # MONGO_URI points to existing MongoDB container (taskflow-mongodb)
       - MONGO_URI=mongodb://taskflow-mongodb:27017/taskflow
       - PORT=5000
       - NODE_ENV=development
+    depends_on:
+      - mongodb
     networks:
       - taskflow-net
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/health"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
 
-  # ── Frontend (React + NGINX) ─────────────────────────────────
   frontend:
-    image: ybhavithr/frontend-taskflow:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: taskflow-frontend
     restart: unless-stopped
     ports:
-      - "3000:80"               # Access app at http://localhost:3000
-    environment:
-      # BACKEND_HOST is injected into nginx.conf by envsubst at startup.
-      # "backend" = Docker service name (DNS resolves automatically)
-      # "5000"    = backend container port
-      - BACKEND_HOST=backend:5000
+      - "3000:80"
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     networks:
       - taskflow-net
 
+volumes:
+  mongodb_data:
+    name: taskflow_mongodb_data
 
-# ── Networks ─────────────────────────────────────────────────
 networks:
   taskflow-net:
     name: taskflow_network
