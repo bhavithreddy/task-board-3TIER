@@ -1,195 +1,97 @@
-# 🚀 TaskFlow — 3-Tier Full Stack Application (Dockerized)
+# 🚀 TaskFlow — 3-Tier Application
 
-![Docker](https://img.shields.io/badge/Docker-Containerized-blue?logo=docker)
-![Node.js](https://img.shields.io/badge/Backend-Node.js-green?logo=node.js)
-![React](https://img.shields.io/badge/Frontend-React-blue?logo=react)
-![MongoDB](https://img.shields.io/badge/Database-MongoDB-brightgreen?logo=mongodb)
-![NGINX](https://img.shields.io/badge/Server-NGINX-darkgreen?logo=nginx)
+A full-stack application with React frontend, Node.js backend, and MongoDB database.
 
----
-
-## 📌 Overview
-
-**TaskFlow** is a **production-style 3-tier application** built using:
-
-* ⚛️ Frontend — React (served via NGINX)
-* 🟢 Backend — Node.js + Express
-* 🍃 Database — MongoDB
-* 🐳 Fully containerized using Docker & Docker Compose
-
-This project demonstrates real-world DevOps practices including:
-
-* Multi-container architecture
-* Service-to-service communication
-* Environment-based configuration
-* Health checks & persistence
-
----
-
-## 🏗️ Architecture
+## Architecture
 
 ```
-[ React Frontend ]  →  [ Node.js Backend ]  →  [ MongoDB ]
-(NGINX)              (API)              (DB)
+Frontend (React/NGINX) → Backend (Node.js) → MongoDB
 ```
 
+## Prerequisites
+
+**Docker Setup:**
+- Docker & Docker Compose
+
+**Local Development:**
+- Node.js v16+
+- MongoDB (local or Atlas)
+
 ---
 
-## ⚙️ Prerequisites
+## Quick Start
 
-Make sure you have installed:
-
-* Docker
-* Docker Compose (comes with Docker Desktop)
-
----
-
-## 📥 Setup & Run
-
-### 🔹 1. Clone the Repository
+### Option 1: Docker (Recommended)
 
 ```bash
-git clone https://github.com/<your-username>/<repo-name>.git
+git clone <repo-url>
 cd <repo-name>
-```
-
----
-
-### 🔹 2. Run the Application
-
-#### ▶️ First time (build images)
-
-```bash
-docker compose up --build
-```
-
-#### ▶️ Run in background (recommended)
-
-```bash
 docker compose up -d
 ```
 
----
+**Access:**
+- Frontend: http://localhost:3000
+- Backend: http://localhost:5000
 
-## 🌐 Access the Application
+### Option 2: Local Development
 
-| Service  | URL                          |
-| -------- | ---------------------------- |
-| Frontend | http://localhost:3000        |
-| Backend  | http://localhost:5000        |
-| Health   | http://localhost:5000/health |
+**Backend:**
+```bash
+cd backend
+npm install
+npm run dev
+# Runs on http://localhost:5000
+```
 
----
+**Frontend (new terminal):**
+```bash
+cd frontend
+npm install
+npm run dev
+# Runs on http://localhost:5173
+```
 
-## 🛑 Stop the Application
+**MongoDB:**
+```bash
+# Install and run locally, or use MongoDB Atlas
+mongod
+```
+
+
+## Stop Services
 
 ```bash
+# Docker
 docker compose down
+
+# Local
+# Press Ctrl+C in each terminal
 ```
 
 ---
 
-## 🧹 Clean Up (Remove Volumes)
+## Commands
 
 ```bash
-docker compose down -v
-```
+# Docker: View logs
+docker compose logs -f
 
----
-
-## 🔍 Useful Commands
-
-```bash
+# Docker: View running containers
 docker ps
-docker logs taskflow-backend
-docker logs taskflow-mongodb
-docker logs taskflow-frontend
+
+# Local: Install dependencies
+npm install
+
+# Local: Start backend (dev mode)
+npm run dev
+
+# Local: Build frontend
+npm run build
 ```
 
 ---
 
-## ⚠️ Troubleshooting
-
-### ❌ Port already in use
-
-```bash
-sudo lsof -i :3000
-```
-
-Kill the process or update ports in `docker-compose.yml`.
-
----
-
-### ❌ Docker not running
-
-```bash
-sudo systemctl start docker
-```
-
----
-
-### ❌ Reset everything
-
-```bash
-docker compose down -v
-docker system prune -a
-docker compose up --build
-```
-
----
-
-## 🧠 Key Configurations
-
-* Backend connects to MongoDB using:
-  ```
-  mongodb://mongodb:27017/taskflow
-  ```
-
-* Frontend connects to backend using:
-  ```
-  backend:5000
-  ```
-
-✔️ Works via Docker internal networking
-
----
-
-## 📦 Features
-
-* ✅ 3-Tier Architecture
-* ✅ Dockerized Services
-* ✅ NGINX Reverse Proxy
-* ✅ Health Checks
-* ✅ Persistent Storage (Volumes)
-* ✅ Environment Variables
-
----
-
-## 🚀 Future Enhancements
-
-* Kubernetes Deployment (K8s)
-* CI/CD Pipeline (GitHub Actions)
-* Cloud Deployment (AWS / Azure / GCP)
-* Monitoring (Prometheus + Grafana)
-
----
-<img width="1565" height="907" alt="image" src="https://github.com/user-attachments/assets/a4a3e62b-beaf-4e63-a9ef-9213ecb99168" />
-
-
-## 🤝 Contributing
-
-Contributions are welcome! Feel free to fork this repo and submit a PR.
-
----
-
-
----
-
-## 👨‍💻 Author
+## Author
 
 Developed by **Yelti Bhavith Reddy**
-
----
-
-⭐ If you like this project, give it a star!
 
