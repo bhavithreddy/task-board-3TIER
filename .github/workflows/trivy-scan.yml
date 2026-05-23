@@ -1,0 +1,62 @@
+name: Trivy Security Scan
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  trivy-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Scan repository for vulnerabilities
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      # Upload results to GitHub Security tab
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      # Build Docker images
+      - name: Build backend image
+        run: docker build -t task-board-3tier-backend:latest ./backend
+
+      - name: Build frontend image
+        run: docker build -t task-board-3tier-frontend:latest ./frontend
+
+      # Scan Docker images
+      - name: Scan backend image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'task-board-3tier-backend:latest'
+          format: 'sarif'
+          output: 'trivy-backend.sarif'
+
+      - name: Scan frontend image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'task-board-3tier-frontend:latest'
+          format: 'sarif'
+          output: 'trivy-frontend.sarif'
+
+      - name: Upload backend scan results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-backend.sarif'
+
+      - name: Upload frontend scan results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-frontend.sarif'
