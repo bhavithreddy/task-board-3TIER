@@ -9,6 +9,9 @@ const router = express.Router();
 const mongoose = require("mongoose");
 const Task = require("../models/task");
 
+const ALLOWED_TASK_UPDATE_FIELDS = ["title", "description", "status", "priority"];
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
+
 // Helper: check DB is connected before running queries
 const checkDB = (req, res, next) => {
   if (mongoose.connection.readyState !== 1) {
@@ -27,7 +30,9 @@ async function updateGauge(app) {
     if (app?.locals?.activeTasksGauge) {
       app.locals.activeTasksGauge.set(count);
     }
-  } catch (_) {}
+  } catch (err) {
+    console.error("updateGauge failed:", err.message);
+  }
 }
 
 // ── GET /api/tasks ────────────────────────────────────────────
@@ -47,16 +52,18 @@ router.get("/", checkDB, async (req, res) => {
 // ── POST /api/tasks ───────────────────────────────────────────
 router.post("/", checkDB, async (req, res) => {
   try {
-    const { title, description, priority } = req.body;
+    const title = String(req.body.title || "").trim();
+    const description = typeof req.body.description === "string" ? req.body.description.trim() : "";
+    const priority = req.body.priority || "medium";
 
-    if (!title || !title.trim()) {
+    if (!title) {
       return res.status(400).json({ success: false, error: "Title is required" });
     }
 
     const task = await Task.create({
-      title: title.trim(),
-      description: description?.trim() || "",
-      priority: priority || "medium",
+      title,
+      description,
+      priority,
     });
 
     await updateGauge(req.app);
@@ -72,10 +79,32 @@ router.post("/", checkDB, async (req, res) => {
 
 // ── PUT /api/tasks/:id ────────────────────────────────────────
 router.put("/:id", checkDB, async (req, res) => {
+  if (!isValidObjectId(req.params.id)) {
+    return res.status(400).json({ success: false, error: "Invalid task ID" });
+  }
+
   try {
+    const updates = {};
+    ALLOWED_TASK_UPDATE_FIELDS.forEach((field) => {
+      if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+        updates[field] =
+          field === "description" && typeof req.body[field] === "string"
+            ? req.body[field].trim()
+            : req.body[field];
+      }
+    });
+
+    if (updates.title !== undefined && !String(updates.title).trim()) {
+      return res.status(400).json({ success: false, error: "Title cannot be empty" });
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ success: false, error: "No valid fields to update" });
+    }
+
     const task = await Task.findByIdAndUpdate(
       req.params.id,
-      { $set: req.body },
+      { $set: updates },
       { new: true, runValidators: true }
     );
 
@@ -87,12 +116,19 @@ router.put("/:id", checkDB, async (req, res) => {
     res.json({ success: true, data: task });
   } catch (err) {
     console.error("PUT /api/tasks/:id error:", err.message);
+    if (err.name === "ValidationError") {
+      return res.status(400).json({ success: false, error: err.message });
+    }
     res.status(500).json({ success: false, error: "Failed to update task" });
   }
 });
 
 // ── DELETE /api/tasks/:id ─────────────────────────────────────
 router.delete("/:id", checkDB, async (req, res) => {
+  if (!isValidObjectId(req.params.id)) {
+    return res.status(400).json({ success: false, error: "Invalid task ID" });
+  }
+
   try {
     const task = await Task.findByIdAndDelete(req.params.id);
 

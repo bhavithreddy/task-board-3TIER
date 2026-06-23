@@ -11,94 +11,11 @@
 // host/port needed. Everything is transparent via the proxy.
 // ================================================================
 
-import { useState, useEffect, useCallback } from "react";
-import axios from "axios";
-
-// Always use /api as the base — the proxy handles routing
-const api = axios.create({
-  baseURL: "/api",
-  timeout: 10000,
-  headers: { "Content-Type": "application/json" },
-});
-
-// Status progression cycle
-const STATUS_NEXT = { todo: "in-progress", "in-progress": "done", done: "todo" };
-const STATUS_LABEL = { todo: "TODO", "in-progress": "IN PROG", done: "DONE" };
-
-function formatDate(iso) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short", day: "numeric", year: "numeric",
-  });
-}
-
-// ── TaskCard ─────────────────────────────────────────────────
-function TaskCard({ task, onDelete, onStatusChange }) {
-  const [deleting, setDeleting] = useState(false);
-  const [updating, setUpdating] = useState(false);
-
-  const handleDelete = async () => {
-    setDeleting(true);
-    await onDelete(task._id);
-    setDeleting(false);
-  };
-
-  const handleStatus = async () => {
-    setUpdating(true);
-    await onStatusChange(task._id, STATUS_NEXT[task.status]);
-    setUpdating(false);
-  };
-
-  return (
-    <div className={`task-card status-${task.status}`}>
-      <div className="task-left">
-        <button
-          className={`status-dot dot-${task.status}`}
-          onClick={handleStatus}
-          disabled={updating}
-          title="Click to advance status"
-        >
-          {updating ? "…" : ""}
-        </button>
-      </div>
-
-      <div className="task-body">
-        <div className={`task-title ${task.status === "done" ? "done" : ""}`}>
-          {task.title}
-        </div>
-        {task.description && (
-          <div className="task-desc">{task.description}</div>
-        )}
-        <div className="task-meta">
-          <span className={`badge badge-status badge-${task.status}`}>
-            {STATUS_LABEL[task.status]}
-          </span>
-          <span className={`badge badge-priority badge-p-${task.priority}`}>
-            {task.priority}
-          </span>
-          <span className="task-date">{formatDate(task.createdAt)}</span>
-        </div>
-      </div>
-
-      <div className="task-actions">
-        <button
-          className="btn-cycle"
-          onClick={handleStatus}
-          disabled={updating}
-          title={`Move to ${STATUS_LABEL[STATUS_NEXT[task.status]]}`}
-        >
-          {updating ? "…" : `→ ${STATUS_LABEL[STATUS_NEXT[task.status]]}`}
-        </button>
-        <button
-          className="btn-delete"
-          onClick={handleDelete}
-          disabled={deleting}
-        >
-          {deleting ? "…" : "✕"}
-        </button>
-      </div>
-    </div>
-  );
-}
+import { useState, useEffect, useCallback, useMemo } from "react";
+import api from "./api";
+import TaskCard from "./TaskCard";
+import { getErrorMessage } from "./utils";
+import { TASK_FILTERS, DEFAULT_FORM_STATE } from "./constants";
 
 // ── Main App ─────────────────────────────────────────────────
 export default function App() {
@@ -109,16 +26,6 @@ export default function App() {
   const [form, setForm] = useState({ title: "", description: "", priority: "medium" });
   const [submitting, setSubmitting] = useState(false);
   const [dbStatus, setDbStatus] = useState("unknown");
-
-  // ── Check backend health ────────────────────────────────────
-  const checkHealth = useCallback(async () => {
-    try {
-      const res = await api.get("/tasks").catch(() => null);
-      if (res) setDbStatus("connected");
-    } catch (_) {
-      setDbStatus("connecting");
-    }
-  }, []);
 
   // ── Fetch tasks ─────────────────────────────────────────────
   const fetchTasks = useCallback(async () => {
@@ -163,10 +70,10 @@ export default function App() {
     try {
       const res = await api.post("/tasks", form);
       setTasks((prev) => [res.data.data, ...prev]);
-      setForm({ title: "", description: "", priority: "medium" });
+      setForm(DEFAULT_FORM_STATE);
       setError(null);
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to create task");
+      setError(getErrorMessage(err, "Failed to create task"));
     } finally {
       setSubmitting(false);
     }
@@ -178,7 +85,7 @@ export default function App() {
       await api.delete(`/tasks/${id}`);
       setTasks((prev) => prev.filter((t) => t._id !== id));
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to delete task");
+      setError(getErrorMessage(err, "Failed to delete task"));
     }
   };
 
@@ -188,21 +95,26 @@ export default function App() {
       const res = await api.put(`/tasks/${id}`, { status: newStatus });
       setTasks((prev) => prev.map((t) => (t._id === id ? res.data.data : t)));
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to update task");
+      setError(getErrorMessage(err, "Failed to update task"));
     }
   };
 
   // Filter for display
-  const displayedTasks =
-    filter === "all" ? tasks : tasks.filter((t) => t.status === filter);
+  const displayedTasks = useMemo(
+    () => (filter === "all" ? tasks : tasks.filter((t) => t.status === filter)),
+    [filter, tasks]
+  );
 
   // Stats (always from full list)
-  const stats = {
-    total: tasks.length,
-    todo: tasks.filter((t) => t.status === "todo").length,
-    inprog: tasks.filter((t) => t.status === "in-progress").length,
-    done: tasks.filter((t) => t.status === "done").length,
-  };
+  const stats = useMemo(
+    () => ({
+      total: tasks.length,
+      todo: tasks.filter((t) => t.status === "todo").length,
+      inProgress: tasks.filter((t) => t.status === "in-progress").length,
+      done: tasks.filter((t) => t.status === "done").length,
+    }),
+    [tasks]
+  );
 
   return (
     <div className="app">
@@ -237,7 +149,7 @@ export default function App() {
           {[
             { label: "Total", value: stats.total, cls: "stat-total" },
             { label: "To Do", value: stats.todo, cls: "stat-todo" },
-            { label: "In Progress", value: stats.inprog, cls: "stat-inprog" },
+            { label: "In Progress", value: stats.inProgress, cls: "stat-inprog" },
             { label: "Done", value: stats.done, cls: "stat-done" },
           ].map((s) => (
             <div key={s.label} className={`stat-card ${s.cls}`}>
@@ -290,13 +202,13 @@ export default function App() {
         {/* ── FILTER BAR ────────────────────────────────────── */}
         <div className="filter-bar">
           <span className="filter-label">FILTER:</span>
-          {["all", "todo", "in-progress", "done"].map((f) => (
+          {TASK_FILTERS.map((filterOption) => (
             <button
-              key={f}
-              className={`filter-btn ${filter === f ? "active" : ""}`}
-              onClick={() => setFilter(f)}
+              key={filterOption.id}
+              className={`filter-btn ${filter === filterOption.id ? "active" : ""}`}
+              onClick={() => setFilter(filterOption.id)}
             >
-              {f === "all" ? "ALL" : STATUS_LABEL[f] || f.toUpperCase()}
+              {filterOption.label}
             </button>
           ))}
           <span className="task-count">{displayedTasks.length} tasks</span>
