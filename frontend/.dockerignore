@@ -3,3 +3,10 @@ dist
 .env
 .git
 *.log
+coverage
+src/**/*.test.js
+src/**/*.test.jsx
+src/test
+.eslintrc.cjs
+vitest.config.js
+npm-debug.log*

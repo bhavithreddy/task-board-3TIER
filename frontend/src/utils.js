@@ -1,12 +1,21 @@
 export function formatDate(iso) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
+  if (!iso) {
+    return '';
+  }
+
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
   });
 }
 
-export function getErrorMessage(error, fallback = "Failed to connect to the backend") {
+export function getErrorMessage(error, fallback = 'Failed to connect to the backend') {
   if (!error) {
     return fallback;
   }
@@ -16,12 +25,12 @@ export function getErrorMessage(error, fallback = "Failed to connect to the back
     return responseError;
   }
 
-  if (error.code === "ECONNABORTED") {
-    return "Request timed out — is the backend running?";
+  if (error.code === 'ECONNABORTED') {
+    return 'Request timed out — is the backend running?';
   }
 
-  if (error.message === "Network Error") {
-    return "Cannot reach backend. Start the backend server (npm start in /backend)";
+  if (error.message === 'Network Error') {
+    return 'Cannot reach backend. Start the backend server (npm start in /backend)';
   }
 
   return error.message || fallback;

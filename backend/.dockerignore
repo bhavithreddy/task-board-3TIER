@@ -2,3 +2,7 @@ node_modules
 .env
 .git
 *.log
+coverage
+test
+.eslintrc.cjs
+npm-debug.log*

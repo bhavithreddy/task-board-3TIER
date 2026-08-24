@@ -3,7 +3,8 @@ node_modules/
 
 # Production build output
 dist/
-/build/
+build/
+coverage/
 
 # Local environment files
 .env
@@ -33,7 +34,9 @@ temp/
 docker-compose.override.yml
 
 # Frontend / Vite
-/.vite/
+.vite/
 
-# Misc
-coverage/
+# Generated audit / scan artifacts
+*-audit.json
+*.sarif
+.trivy/
