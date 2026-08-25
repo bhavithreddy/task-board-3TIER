@@ -28,7 +28,7 @@ export default function TaskCard({ task, onDelete, onStatusChange }) {
     }
   };
 
-  const nextLabel = STATUS_LABEL[STATUS_NEXT[task.status]] || 'NEXT';
+  const nextLabel = STATUS_LABEL[STATUS_NEXT[task.status]] || 'Next';
 
   return (
     <article className={`task-card status-${task.status}`}>
@@ -41,7 +41,7 @@ export default function TaskCard({ task, onDelete, onStatusChange }) {
           title="Click to advance status"
           aria-label={`Advance status for ${task.title}`}
         >
-          {updating ? '…' : ''}
+          {task.status === 'done' ? '✓' : updating ? '…' : ''}
         </button>
       </div>
 
@@ -65,7 +65,7 @@ export default function TaskCard({ task, onDelete, onStatusChange }) {
           disabled={updating}
           title={`Move to ${nextLabel}`}
         >
-          {updating ? '…' : `→ ${nextLabel}`}
+          {updating ? '…' : `Move to ${nextLabel}`}
         </button>
         <button
           type="button"
@@ -74,7 +74,7 @@ export default function TaskCard({ task, onDelete, onStatusChange }) {
           disabled={deleting}
           aria-label={`Delete task ${task.title}`}
         >
-          {deleting ? '…' : '✕'}
+          {deleting ? '…' : 'Delete'}
         </button>
       </div>
     </article>

@@ -5,16 +5,16 @@ export const STATUS_NEXT = {
 };
 
 export const STATUS_LABEL = {
-  todo: 'TODO',
-  'in-progress': 'IN PROG',
-  done: 'DONE',
+  todo: 'To Do',
+  'in-progress': 'In Progress',
+  done: 'Done',
 };
 
 export const TASK_FILTERS = [
-  { id: 'all', label: 'ALL' },
-  { id: 'todo', label: 'TODO' },
-  { id: 'in-progress', label: 'IN PROG' },
-  { id: 'done', label: 'DONE' },
+  { id: 'all', label: 'All' },
+  { id: 'todo', label: 'To Do' },
+  { id: 'in-progress', label: 'In Progress' },
+  { id: 'done', label: 'Done' },
 ];
 
 export const DEFAULT_FORM_STATE = {
