@@ -54,7 +54,26 @@ jobs:
           advanced-security: false
           annotations: true
           persona: 'pedantic'
-    
+
+
+  workflow-lint:
+    name: "03. Workflow YAML Lint"
+    needs: checkout-and-validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 
+        with:
+          persist-credentials: false
+      - name: Install actionlint
+        run: |
+          set -euo pipefail
+          bash <(curl -sL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) 1.7.12
+      - name: Lint workflows
+        run: |
+          set -euo pipefail
+          actionlint -color .github/workflows/*.yml
 
 
 
