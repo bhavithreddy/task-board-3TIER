@@ -74,7 +74,7 @@ jobs:
       - name: Lint workflows
         run: |
           set -euo pipefail
-          actionlint -color .github/workflows/*.yml
+          actionlint -color .github/workflows/*.yml .github/workflows/*.yaml
 
 
 
