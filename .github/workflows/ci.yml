@@ -1,1 +1,42 @@
+name: Three-tier-task_board
 
+on: 
+  pull_request: 
+    branches: [Main, Testing]
+  push:
+    branches: [Main, Testing]
+
+  workflow_dispatch:
+
+permissions: 
+  contents: read
+concurrency:
+  group: $ {{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+
+jobs:
+
+  checkout-and-validate:
+    name: "01. Checkout and repository validation"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate repository structure
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d .github/workflows
+          echo "Repository structure check passes"
+
+
+
+
+    
