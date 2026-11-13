@@ -36,6 +36,26 @@ jobs:
           test -d .github/workflows
           echo "Repository structure check passes"
 
+  workflow-security-audit:
+    name: "02. Github Actions security audit"
+    needs: checkout-and-validate
+    runs-on: ubuntu-latest
+    permissions: 
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Run zizmor
+        uses: zizmorcore/zizmor-action@192e21d79ab29983730a13d1382995c2307fbcaa # v0.5.7
+        with:
+          advanced-security: false
+          annotations: true
+          persona: 'pedantic'
+    
+
 
 
 
