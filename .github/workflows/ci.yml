@@ -200,12 +200,16 @@ jobs:
 
      
   sast-scan:
+    name: "05. SAST — CodeQL Security Analysis"
     runs-on: ubuntu-latest
     permissions:
       security-events: write  # Required for uploading SARIF
       contents: read
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       # CodeQL for deep semantic analysis
       - name: Initialize CodeQL
