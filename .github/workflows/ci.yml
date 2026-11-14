@@ -60,6 +60,7 @@ jobs:
     name: "03. Workflow YAML Lint"
     needs: checkout-and-validate
     runs-on: ubuntu-latest
+    timeout-minute: 5
     permissions:
       contents: read
     steps:
@@ -68,13 +69,23 @@ jobs:
         with:
           persist-credentials: false
       - name: Install actionlint
+        id: install-actionlint
+        shell: bash
         run: |
           set -euo pipefail
-          bash <(curl -sL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) 1.7.12
+          installer="$RUNNER_TEMP/download-actionlint.bash"
+          curl --fail --silent --show-error --location \
+          https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash \
+          --output "$installer"
+          bash "$installer" 1.7.12 "$RUNNER_TEMP"
+
       - name: Lint workflows
+        shell: bash
+        env:
+          ACTIONLINT: ${{ steps.install-actionlint.outputs.executable }}
         run: |
           set -euo pipefail
-          actionlint -color .github/workflows/*.yml .github/workflows/*.yaml
+          "$ACTIONLINT" -color
 
 
 
