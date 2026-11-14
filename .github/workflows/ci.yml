@@ -60,7 +60,6 @@ jobs:
     name: "03. Workflow YAML Lint"
     needs: checkout-and-validate
     runs-on: ubuntu-latest
-    timeout-minute: 5
     permissions:
       contents: read
     steps:
