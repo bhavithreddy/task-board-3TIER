@@ -172,6 +172,7 @@ jobs:
           docker pull "$GITLEAKS_IMAGE"
 
       - name: Scan fetched Git history
+        timeout-minutes: 10
         shell: bash
         run: |
           set -euo pipefail
