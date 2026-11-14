@@ -139,6 +139,65 @@ jobs:
           set -euo pipefail
           npm run format:check
 
+  secret-scan:
+    name: Secret scanning
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    env:
+      GITLEAKS_IMAGE: ${{ vars.GITLEAKS_IMAGE }}
+
+    steps:
+      - name: Checkout full Git history
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate scanner reference
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$GITLEAKS_IMAGE" =~ ^ghcr\.io/gitleaks/gitleaks@sha256:[a-f0-9]{64}$ ]]; then
+            echo "::error::Set GITLEAKS_IMAGE to an approved Gitleaks image pinned by SHA-256 digest."
+            exit 1
+          fi
+
+      - name: Pull approved scanner
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker pull "$GITLEAKS_IMAGE"
+
+      - name: Scan fetched Git history
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          docker run --rm \
+            --network none \
+            --read-only \
+            --cap-drop ALL \
+            --security-opt no-new-privileges \
+            --tmpfs /tmp:rw,noexec,nosuid,size=128m \
+            --env GIT_CONFIG_COUNT=1 \
+            --env GIT_CONFIG_KEY_0=safe.directory \
+            --env GIT_CONFIG_VALUE_0=/repo \
+            --mount "type=bind,source=$GITHUB_WORKSPACE,target=/repo,readonly" \
+            --workdir /repo \
+            "$GITLEAKS_IMAGE" \
+            git \
+            --log-opts="--all" \
+            --redact=100 \
+            --verbose \
+            --no-banner \
+            --no-color \
+            --exit-code=1 \
+            --timeout=600 \
+            /repo
+
      
 
 
