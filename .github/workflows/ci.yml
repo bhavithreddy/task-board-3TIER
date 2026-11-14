@@ -87,6 +87,60 @@ jobs:
           "$ACTIONLINT" -color
 
 
+  code-quality:
+    name: "04. Code quality (${{ matrix.component }})"
+    needs: checkout-and-validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        component: [frontend, backend]
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ matrix.component }}
+    
+    env:
+      CI: true
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: ${{ matrix.component }}/package-lock.json
+
+      - name: Show runtime versions
+        run: |
+          set -euo pipefail
+          node --version
+          npm --version
+      
+      - name: Install locked dependencies
+        run: |
+          set -euo pipefail
+          npm ci --include=dev --no-audit --no-fund
+
+      - name: Run ESLint
+        run: |
+          set -euo pipefail
+          npm run lint -- --max-warnings=0
+
+      - name: Check Prettier formatting
+        run: |
+          set -euo pipefail
+          npm run format:check
+
+     
+
 
 
     
