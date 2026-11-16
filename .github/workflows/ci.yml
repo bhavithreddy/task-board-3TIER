@@ -253,7 +253,7 @@ jobs:
           ignore-unfixed: true
           format: 'sarif'
           output: 'trivy-results.sarif'
-          exit-code: '1'
+          exit-code: '0'
 
       - name: Upload Trivy SARIF report
         if: always() && hashFiles('trivy-results.sarif') != ''
@@ -261,3 +261,12 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
           category: 'trivy-sca'
+
+      - name: Fail on HIGH or CRITICAL vulnerabilities
+        run: |
+          trivy fs . \
+            --scanners vuln \
+            --vuln-type library \
+            --severity HIGH,CRITICAL \
+            --ignore-unfixed \
+            --exit-code 1
