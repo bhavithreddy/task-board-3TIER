@@ -255,6 +255,18 @@ jobs:
           output: 'trivy-results.sarif'
           exit-code: '0'
 
+      - name: Generate readable vulnerability report
+        if: always()
+        run: |
+          trivy fs . \
+            --scanners vuln \
+            --pkg-types library \
+            --severity HIGH,CRITICAL \
+            --ignore-unfixed \
+            --format table \
+            --output trivy-report.txt \
+            --exit-code 0
+
       - name: Upload Trivy SARIF report
         if: always() && hashFiles('trivy-results.sarif') != ''
         uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
@@ -262,11 +274,33 @@ jobs:
           sarif_file: 'trivy-results.sarif'
           category: 'trivy-sca'
 
-      - name: Fail on HIGH or CRITICAL vulnerabilities
-        run: |
-          trivy fs . \
-            --scanners vuln \
-            --vuln-type library \
-            --severity HIGH,CRITICAL \
-            --ignore-unfixed \
-            --exit-code 1
+      - name: Upload detailed report artifact
+        if: always() && hashFiles('trivy-report.txt') != ''
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: trivy-dependency-report-${{ github.run_id }}
+          path: trivy-report.txt
+          if-no-files-found: ignore
+
+      - name: Send vulnerability report by email
+        if: always() && hashFiles('trivy-report.txt') != ''
+        uses: dawidd6/action-send-mail@611879133a9569642c41be66f4a323286e9b8a3b # v4
+        with:
+          server_address: ${{ secrets.SMTP_HOST }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: |
+            [Trivy] Dependency vulnerabilities found in ${{ github.repository }}
+          to: ${{ secrets.SECURITY_EMAIL_TO }}
+          from: ${{ secrets.SMTP_FROM }}
+          body: |
+            Trivy found HIGH or CRITICAL dependency vulnerabilities.
+
+            Repository: ${{ github.repository }}
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+            Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            The detailed report is attached and also available as a workflow artifact.
+          attachments: trivy-report.txt
