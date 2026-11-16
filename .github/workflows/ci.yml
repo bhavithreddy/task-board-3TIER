@@ -234,7 +234,7 @@ jobs:
 
     permissions:
       contents: read
-      security-events: write
+      security-events: write   # Required to upload Trivy SARIF findings to GitHub Code Scanning.
 
     steps:
       - name: Checkout repository
